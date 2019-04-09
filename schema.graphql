@@ -1,0 +1,115 @@
+input PagingRequest {
+  limit: Int
+  nextToken: String
+}
+
+type User {
+  id: ID!
+  name: String
+  locations(paging: PagingRequest): LocationPagingConnection
+  reviews(paging: PagingRequest): ReviewPagingConnection
+  favorites(paging: PagingRequest): LocationPagingConnection
+}
+
+type GPS {
+  longitude: Int
+  latitude: Int
+}
+
+input GPSInput {
+  longitude: Int
+  latitude: Int
+}
+
+type Address {
+  street: String
+  city: String
+  state: String
+  zipcode: String
+}
+
+type Location {
+  id: ID!
+  owner: User!
+  name: String!
+  gps: GPS
+  address: Address
+  phone: String
+  email: String
+  favoriteCount: Int
+  averageRating: Float
+  reviews(paging: PagingRequest): ReviewPagingConnection
+}
+
+type Review {
+  id: ID!
+  user: User!
+  location: Location!
+  content: String
+  rating: Int
+}
+
+type UserPagingConnection {
+  items: [User]
+  nextToken: String
+}
+
+type LocationPagingConnection {
+  items: [Location]
+  nextToken: String
+}
+
+type ReviewPagingConnection {
+  items: [Review]
+  nextToken: String
+}
+
+input GPSQueryInput {
+  gps: GPSInput
+  radius: Float
+}
+
+input AddressInput {
+  street: String
+  city: String
+  state: String
+  zipcode: String
+}
+
+input LocationInput {
+  name: String
+  address: AddressInput
+  phone: String
+  email: String
+}
+
+input ReviewInput {
+  content: String
+  rating: Int
+}
+
+type Query {
+  me: User!
+  findLocation(
+    byGPS: GPSQueryInput
+    byAddress: AddressInput
+  ): LocationPagingConnection
+}
+
+type Mutation {
+  addLocation(location: LocationInput): Location
+  addReview(locationId: ID!, review: ReviewInput): Review
+  markFavorite(locationId: ID!): Location
+}
+
+type Subscription {
+  location(locationId: ID!): Location
+    @aws_subscribe(mutations: ["addReview", "markFavorite"])
+  reviews(locationId: ID!): Review @aws_subscribe(mutations: ["addReview"])
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
